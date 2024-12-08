@@ -151,9 +151,17 @@ Annotator::Visibility Annotator::getVisibility(const clang::NamedDecl *decl)
 
     switch (decl->getLinkageInternal()) {
     default:
-    case clang::Linkage::None:
-        return Visibility::Local;
-    case clang::Linkage::External:
+#if CLANG_VERSION_MAJOR >= 18
+     case clang::Linkage::None:
+#else
+    case clang::NoLinkage:
+#endif
+         return Visibility::Local;
+#if CLANG_VERSION_MAJOR >= 18
+     case clang::Linkage::External:
+#else
+    case clang::ExternalLinkage:
+#endif
         if (decl->getDeclContext()->isRecord()
             && mainFID
                 == sm.getFileID(
@@ -172,11 +180,19 @@ Annotator::Visibility Annotator::getVisibility(const clang::NamedDecl *decl)
             return Visibility::Static;
         }
         return Visibility::Global;
-    case clang::Linkage::Internal:
+#if CLANG_VERSION_MAJOR >= 18
+     case clang::Linkage::Internal:
+#else
+    case clang::InternalLinkage:
+#endif
         if (mainFID != sm.getFileID(sm.getSpellingLoc(decl->getSourceRange().getBegin())))
             return Visibility::Global;
         return Visibility::Static;
-    case clang::Linkage::UniqueExternal:
+#if CLANG_VERSION_MAJOR >= 18
+     case clang::Linkage::UniqueExternal:
+#else
+    case clang::UniqueExternalLinkage:
+#endif
         return Visibility::Static;
     }
 }
